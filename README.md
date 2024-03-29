@@ -30,7 +30,7 @@ In this study, we integrated two publicly available single-cell RNA-sequencing d
 
 This study provides new insights into the relationship between macrophages and cancer cell-derived factors in human ER+ breast tumors. Additionally, it uncovers S100A11 as a targetable paracrine regulator of cancer-macrophage interactions in the pro-tumorigenic macrophage-rich breast tumor microenvironment. 
 
-[Figure1_BRCAERpS100A11_v2.7_20240329_Github.pdf](https://github.com/sanghoonleepitt/S100A11_Macrophage/files/14805759/Figure1_BRCAERpS100A11_v2.7_20240329_Github.pdf)
+![Figure1_BRCAERpS100A11_v2 7_20240329_Github](https://github.com/sanghoonleepitt/S100A11_Macrophage/assets/106251438/ffc8bae9-d027-454f-a965-3c93a5724aa8)
 
 
 # A. Installing necessary libraries
