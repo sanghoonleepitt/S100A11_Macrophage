@@ -85,6 +85,8 @@ setwd(dir); print(dir)   # Your current working directory # [1]
 
 # C. Preprocess Wu et al. and Bassez et al. scRNA-seq data and make Seurat objects.
 
+Ref. https://www.nature.com/articles/s41588-021-00911-1
+
 ## Section 1. Read Wu et al. scRNAseq data files and make Seurat object.   
 
 ```{Wuetal}
@@ -159,6 +161,8 @@ dim(SeuratObject_Wuetal)
 ```
 
 ##   Section 2. Read Bassez et al. scRNAseq data files and make Seurat object. 
+
+Ref. https://www.nature.com/articles/s41591-021-01323-8  
 
 ```{Bassezetal}
 ################################################################################
