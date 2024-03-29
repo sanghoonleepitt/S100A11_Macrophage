@@ -34,6 +34,7 @@ In this study, we integrated two publicly available single-cell RNA-sequencing d
 This study provides new insights into the relationship between macrophages and cancer cell-derived factors in human ER+ breast tumors. Additionally, it uncovers S100A11 as a targetable paracrine regulator of cancer-macrophage interactions in the pro-tumorigenic macrophage-rich breast tumor microenvironment. 
 
 ![Figure1_BRCAERpS100A11_v2 7_20240329_Github](https://github.com/sanghoonleepitt/S100A11_Macrophage/assets/106251438/ffc8bae9-d027-454f-a965-3c93a5724aa8)
+![FigureForGithub](https://github.com/sanghoonleepitt/S100A11_Macrophage/assets/106251438/bcffcc28-2c4c-4681-acfd-727ceac02b01)
 
 
 # A. Installing necessary libraries
@@ -85,7 +86,8 @@ setwd(dir); print(dir)   # Your current working directory # [1]
 
 # C. Preprocess Wu et al. and Bassez et al. scRNA-seq data and make Seurat objects.
 
-Ref. https://www.nature.com/articles/s41588-021-00911-1
+Ref. Wu et al. Nature Genetics 2021, https://www.nature.com/articles/s41588-021-00911-1
+Ref. Bassez et al. Nature Medicine 2021, https://www.nature.com/articles/s41591-021-01323-8  
 
 ## Section 1. Read Wu et al. scRNAseq data files and make Seurat object.   
 
@@ -161,8 +163,6 @@ dim(SeuratObject_Wuetal)
 ```
 
 ##   Section 2. Read Bassez et al. scRNAseq data files and make Seurat object. 
-
-Ref. https://www.nature.com/articles/s41591-021-01323-8  
 
 ```{Bassezetal}
 ################################################################################
