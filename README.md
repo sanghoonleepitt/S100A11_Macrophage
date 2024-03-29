@@ -20,7 +20,7 @@ So, figures you generate will be different from the figures published in the pap
 In order to reproduce the figures published in the paper, you need to go to Section 3 - Step3d, 
 and read a Seurat object file, "SeuratObject_WuetalBassezetalIntegration.rds," and run the rest of the codes. 
 I didn't post the Seurat object file because the file size is big. 
-Eamil Sanghoon Lee, sal170@pitt.edu and ask for Seurat object files. 
+Eamil Sanghoon Lee, sal170@pitt.edu and ask for the Seurat object file. 
 
 > SeuratObject_WuetalBassezetal <- readRDS("SeuratObject_WuetalBassezetalIntegration.rds")
 
