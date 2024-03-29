@@ -15,9 +15,12 @@ Then, you can email Sanghoon Lee, sal170@pitt.edu and ask for R object files, .r
 
 If you start the code from Section 1 and follow the rest of the codes, ___you wouldn't be able to reproduce the same figures published in the paper.___
 It is because SCTransform(), which is for the normalization and variance stabilization of molecular count data, will generate transformed data. 
+So, figures you generate will be different from the figures published in the paper.
 
 In order to reproduce the figures published in the paper, you need to go to Section 3 - Step3d, 
 and read a Seurat object file, "SeuratObject_WuetalBassezetalIntegration.rds," and run the rest of the codes. 
+I didn't post the Seurat object file because the file size is big. 
+Eamil Sanghoon Lee, sal170@pitt.edu and ask for Seurat object files. 
 
 > SeuratObject_WuetalBassezetal <- readRDS("SeuratObject_WuetalBassezetalIntegration.rds")
 
