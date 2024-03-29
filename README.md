@@ -9,7 +9,7 @@ output: html_document
 - Platform: aarch64-apple-darwin20 (64-bit), Apple M2 Pro
 - Running under: macOS Sonoma 14.4.1
 
-___If your computer spec is not good, your computer may shut down while learning codes. ___
+___If your computer spec is not good, your computer may shut down while learning codes.___
 Especially, SCTransform() in the begining step of preprocessing Wu et al. and Bassez et al datasets requires a lot of memory. 
 Then, you can email Sanghoon Lee, sal170@pitt.edu and ask for R object files, .rds, that enables you to run the code from a middle step.  
 
