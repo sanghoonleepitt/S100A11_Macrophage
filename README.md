@@ -832,7 +832,7 @@ library(circlize)  # cran  for colorRamp2 function
 library(corrplot)
 options(rgl.useNULL = TRUE)  # https://stackoverflow.com/a/66127391/2554330
 
-pathway.corplot_SH<-function(corMatrix,fontsize=0.8){
+Correlation.corplot_SH <- function(corMatrix,fontsize=0.8){
         rownames(corMatrix)=gsub("_"," ",rownames(corMatrix))
         colnames(corMatrix)=gsub("_"," ",colnames(corMatrix))
         mycolor=colorRampPalette(c("darkblue","blue", "white","orange", "red","red"))(n=100)
@@ -850,7 +850,7 @@ CellTypeProportionData_Cor <- cor(CellTypeProportionData_Correlation, method="sp
 dim(CellTypeProportionData_Cor); CellTypeProportionData_Cor[1:2,] 
 
 pdf(file="Fig2E_PyramidCorrelation_ByCellTypeFraction.pdf",width=6, height=6)
-          pathway.plot=pathway.corplot_SH(corMatrix=CellTypeProportionData_Cor)
+          Correlation.plot=Correlation.corplot_SH(corMatrix=CellTypeProportionData_Cor)
 graphics.off()
 ```
 
@@ -951,13 +951,19 @@ ScaledExp_RmvLowExpGene <- ScaledExp_Process %>% tibble::rownames_to_column("Cel
 table(ScaledExp_RmvLowExpGene$CaseID); dim(ScaledExp_RmvLowExpGene);   # 70850 16402
 # saveRDS(ScaledExp_RmvLowExpGene, file="ScaledExp_RmvLowExpGene.rds")
 ScaledExp_RmvLowExpGene <- readRDS(file="ScaledExp_RmvLowExpGene.rds")
+
+```
+ 
+Calculate mean of gene expression per caseID and calculate correlation 
+ 
+```{Step9c}
 #################################################################################################
 ## Step 9c. Calculate mean of gene expression per caseID and calculate correlation 
 ## between gene expression and Macrophage fraction in different cell types. 
 #################################################################################################
 MyCellTypeSubset <- unique(ScaledExp_RmvLowExpGene$CellTypeMacroTcell_GSE176EGA6608); print(MyCellTypeSubset)
 
-CorrTestSummary_AllCellType <- data.frame(matrix(ncol=1, nrow=ncol(ScaledExp_Process))); CellTypeCount=0;
+CorrTestSummary_AllCellType <- data.frame(matrix(ncol=1, nrow=ncol(ScaledExp_RmvLowExpGene))); CellTypeCount=0;
 for(EachCellTypeSubset in MyCellTypeSubset) {
     # EachCellTypeSubset <- MyCellTypeSubset[6]
     CellTypeCount=CellTypeCount+1;
@@ -1031,6 +1037,12 @@ CorrTestSummary_AllCellType[is.na(CorrTestSummary_AllCellType)] <- ""
 fwrite(CorrTestSummary_AllCellType, file="SpearCorrel_MacrophageFraction_AllGeneExp.txt", 
        row.names=TRUE, col.names=TRUE, sep="\t", quote=FALSE)
 
+```
+
+Linedotplot of correlation - Figure 3A
+
+```{Stpe9d}
+
 #################################################################################################
 ## Step 9d. Linedotplot of correlation - Figure 3A
 #################################################################################################
@@ -1088,7 +1100,12 @@ RhoThres=0.5; pvalThres=0.05
     ggsave(MyPlot, file=OutFile, width=8,height=8)
 # }  # end of for loop  
 
-      
+```
+
+Outgrid correlation dotplot - Figure 3E  
+
+```{Step9e}
+    
 #################################################################################################
 ## Step 9e. Outgrid correlation dotplot - Figure 3E  
 ##          Correlation between Macrophage infiltration and S100A11 gene expression in different cell types.  
@@ -1199,12 +1216,14 @@ grid.arrange(MyPlot_AllCellType[[1]], MyPlot_AllCellType[[2]], MyPlot_AllCellTyp
          MyPlot_AllCellType[[5]], MyPlot_AllCellType[[6]], MyPlot_AllCellType[[7]],MyPlot_AllCellType[[8]], 
          MyPlot_AllCellType[[9]], MyPlot_AllCellType[[10]], MyPlot_AllCellType[[11]],MyPlot_AllCellType[[12]], 
          MyPlot_AllCellType[[13]],MyPlot_AllCellType[[14]], nrow=4, top="" )
-dev.off()    
+dev.off()   
+
+
 ```
       
-
     
 ## Section 10.  S100A11 expression in different samples or in different cell types. 
+
 ```{S100A11}
 #################################################################################################
 ## Step 10a. Violin plot of S100A11 gene expression in different CaseID, when the samples
@@ -1232,12 +1251,4 @@ ggsave(MyViolinplot_ByCellType, height=8,width=12, dpi=300,
        filename="Fig3D_OutVlnPlot_S100A11Exp_InDifferentCellType.pdf", useDingbats=FALSE)
 ```
 
-
-
-
-
-
-
-
-
-
+## The end
