@@ -9,7 +9,7 @@ output: html_document
 - Platform: aarch64-apple-darwin20 (64-bit), Apple M2 Pro
 - Running under: macOS Sonoma 14.4.1
 
-___If your computer spec is not good, your computer may shut down while learning codes.___
+___If your computer spec is not good, your computer may shut down while learning the codes.___
 
 To run the codes below and reproduce the figures published in the paper, as we explained in Section 1 below, you should contact us to obtain Seurat object file,
 "SeuratObject_WuetalBassezetalIntegration.rds."
