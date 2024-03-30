@@ -10,20 +10,9 @@ output: html_document
 - Running under: macOS Sonoma 14.4.1
 
 ___If your computer spec is not good, your computer may shut down while learning codes.___
-Especially, SCTransform() in the begining step of preprocessing Wu et al. and Bassez et al datasets requires a lot of memory. 
-Then, you can email Sanghoon Lee, sal170@pitt.edu and ask for R object files, .rds, that enables you to run the code from a middle step.  
 
-If you start the code from Section 1 and follow the rest of the codes, ___you wouldn't be able to reproduce the same figures published in the paper.___
-It is because SCTransform(), which is for the normalization and variance stabilization of molecular count data, will generate transformed data. 
-So, figures you generate will be different from the figures published in the paper.
-
-In order to reproduce the figures published in the paper, you need to go to Section 3 - Step3d, 
-and read a Seurat object file, "SeuratObject_WuetalBassezetalIntegration.rds," and run the rest of the codes. 
-I didn't post the Seurat object file because the file size is big. 
-Eamil Sanghoon Lee, sal170@pitt.edu and ask for the Seurat object file. 
-
-> SeuratObject_WuetalBassezetal <- readRDS("SeuratObject_WuetalBassezetalIntegration.rds")
-
+To reproduce the figures published in the paper, as we explained in Section 1, you should contact us and obtain Seurat object file,
+"SeuratObject_WuetalBassezetalIntegration.rds" and run the rest of the code. 
 
 ## Cancer-cell derived S100A11 promotes macrophage recruitment in ER+ breast cancer
 
@@ -33,13 +22,10 @@ In this study, we integrated two publicly available single-cell RNA-sequencing d
 
 This study provides new insights into the relationship between macrophages and cancer cell-derived factors in human ER+ breast tumors. Additionally, it uncovers S100A11 as a targetable paracrine regulator of cancer-macrophage interactions in the pro-tumorigenic macrophage-rich breast tumor microenvironment. 
 
-![Figure1_BRCAERpS100A11_v2 7_20240329_Github](https://github.com/sanghoonleepitt/S100A11_Macrophage/assets/106251438/ffc8bae9-d027-454f-a965-3c93a5724aa8)
-![FigureForGithub](https://github.com/sanghoonleepitt/S100A11_Macrophage/assets/106251438/bcffcc28-2c4c-4681-acfd-727ceac02b01)
 
+**Installing necessary libraries**
 
-# A. Installing necessary libraries
-
-```{InstallPackages}
+```{InstallLibrary}
 rm(list=ls())
 library(BiocManager) # CRAN # install.packages("BiocManager")
 library(Seurat)  # CRAN # install.packages("Seurat")
@@ -57,234 +43,33 @@ library(harmony) # CRAN, to use RunHarmony() function, https://github.com/immuno
 
 ```
 
-# B. Setup working directory and download input data files of Wu et al. and Bassez et al. scRNA-seq data. 
+**Setup working directory.**
+
+```{Setup_WorkingDirectory}
+dir<-dirname(rstudioapi::getSourceEditorContext()$path); 
+setwd(dir); print(dir)   # Your current working directory # [1]
+```
+
+
+**Raw scRNA-seq data are from of Wu et al. and Bassez et al. scRNA-seq data.**
 
 Ref. Wu et al. Nature Genetics 2021, https://www.nature.com/articles/s41588-021-00911-1
 
 Ref. Bassez et al. Nature Medicine 2021, https://www.nature.com/articles/s41591-021-01323-8  
 
-Input file size is big so we couldn't post them in Github. 
-You need to download the input data files and process yourself as explained below. 
 
-```{Setup_WorkingDirectory}
-dir<-dirname(rstudioapi::getSourceEditorContext()$path); 
-setwd(dir); print(dir)   # Your current working directory # [1]
+# Analyze scRNA-seq data and make result figures
 
-### 1. Wu et al. data files
-### Go to https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE176078 
-### and download “GSE176078_Wu_etal_2021_BRCA_scRNASeq.tar.gz” 
-### You should untar the ".tar.gz" file. Then, you will get 3 files; 
-### count_matrix_barcodes.tsv, count_matrix_genes.tsv, count_matrix_sparse.mtx
-### You need to rename the files to; barcodes.tsv, features.tsv, matrix.mtx, metadata.csv
-### You should gzip the files to get; barcodes.tsv.gz, features.tsv.gz, matrix.mtx.gz 
-### (You don't need to gzip metadata.csv file) 
-### Store the 3 files at the current working directory.
+##   Section 1. UMAP reduction, clustering cells, and define main cell types. 
 
-### 2. Bassez et al. data files 
-### Go to https://lambrechtslab.sites.vib.be/en/data-access You need to create an account to login 
-### And,  find Bassez et al. dataset. 
-### download two files; 1863-counts_cells_cohort1.rds and 1872-BIOKEY_metaData_cohort1_web.csv
-### Store the files at the current working directory. 
-```
+**To run this code and reproduce figures in the paper, you should contact us and request Seurat object, "SeuratObject_WuetalBassezetalIntegration.rds." We generated it by merging Wu et al. and Bassez et al. scRNA-seq data and performing SCTransform and Harmony integration.**
 
-
-# C. Preprocess Wu et al. and Bassez et al. scRNA-seq data and make Seurat objects.
-
-## Section 1. Read Wu et al. scRNAseq data files and make Seurat object.   
-
-```{Wuetal}
-################################################################################
-## Step1a. Read 10X files and setup Seurat object - Wu et al. data.  
-# The processed 3 files, "barcodes.tsv.gz," "features.tsv.gz,"matrix.mtx.gz", should be in 
-### the currrent working directory
-################################################################################
-Wuetal_ExpMatrix <- Read10X(data.dir=".", gene.column=1)  # 29,733g   100,064 cells    
-SeuratObject_Wuetal = CreateSeuratObject(counts = Wuetal_ExpMatrix); dim(SeuratObject_Wuetal@assays$RNA@cells); 
-dim(SeuratObject_Wuetal@assays$RNA@features);   # 29733 genes 100064 cells
-# saveRDS(SeuratObject_Wuetal, file="SeuratObject_Wuetal.rda")
-table(SeuratObject_Wuetal$orig.ident)
-
-################################################################################
-## Step1b. Read metadata and clinical data  - Wu et al. data.  => add it to Seurat object
-################################################################################
-## Read metadata file 
-MetaData_Wuetal <- fread("metadata.csv", header=TRUE, stringsAsFactors=FALSE);dim(MetaData_Wuetal) # 100064  9
-MetaData_Wuetal_Proc <- MetaData_Wuetal %>% 
-                                dplyr::mutate(celltype_major=gsub(" ","_", MetaData_Wuetal$celltype_major),
-                                celltype_minor=gsub(" ","_", MetaData_Wuetal$celltype_minor), 
-                                celltype_subset=gsub(" ","_", MetaData_Wuetal$celltype_subset)) 
-colnames(MetaData_Wuetal_Proc)[2]<-"CaseID"; dim(MetaData_Wuetal_Proc); table(MetaData_Wuetal_Proc$CaseID)
-
-## Read clinicaldata file 
-ClinicalData_Wuetal <- fread("ClinicalData_GSE176078.txt", header=TRUE, stringsAsFactors=FALSE)  # 26  6
-ClinicalData_Wuetal$CaseID <- paste0("CID", ClinicalData_Wuetal$CaseID)
-ClinicalData_Wuetal$HistoERHER2<-paste0(ClinicalData_Wuetal$HistologyType,"_",ClinicalData_Wuetal$ReceptorType)
-
-MetaClnicalData_Wuetal <- dplyr::inner_join(MetaData_Wuetal_Proc, ClinicalData_Wuetal);
-colnames(MetaClnicalData_Wuetal)[1]<-"CellID"; dim(MetaClnicalData_Wuetal) # 100064    10
-
-## Add metadata to Seurat Object. 
-table(names(SeuratObject_Wuetal@active.ident) %in% MetaClnicalData_Wuetal$CellID) ## TRUE 100064
-identical(MetaClnicalData_Wuetal$CellID , names(SeuratObject_Wuetal@active.ident)) ## TRUE
-identical(MetaClnicalData_Wuetal$CellID , rownames(SeuratObject_Wuetal@meta.data)) ## TRUE
-
-SeuratObject_Wuetal<-AddMetaData(object=SeuratObject_Wuetal, 
-                         metadata=c(MetaClnicalData_Wuetal$celltype_major), col.name=c("CellTypeMajor"))
-SeuratObject_Wuetal<-AddMetaData(object=SeuratObject_Wuetal, metadata=c(MetaClnicalData_Wuetal$celltype_minor), 
-                         col.name=c("CellTypeMinor"))
-SeuratObject_Wuetal<-AddMetaData(object=SeuratObject_Wuetal,metadata=c(MetaClnicalData_Wuetal$celltype_subset),
-                         col.name=c("CellTypeSubset"))
-SeuratObject_Wuetal<-AddMetaData(object=SeuratObject_Wuetal, metadata=c(MetaClnicalData_Wuetal$CaseID), 
-                         col.name=c("CaseID"))
-
-table(SeuratObject_Wuetal$CellTypeMajor)
-
-################################################################################
-## Step1c. Subset only ER+ and pre-treatment samples. i.e. Remove HER2+/ER+ and treated ER+ patients. 
-## Then QC and SCTransform
-################################################################################
-
-SeuratObject_Wuetal <- subset(x=SeuratObject_Wuetal, subset=orig.ident %in% 
-      c("CID3941", "CID3948","CID4040","CID4067","CID4290A", "CID4461","CID4463","CID4471",
-        "CID4530N","CID4535"));
-table(SeuratObject_Wuetal$orig.ident); dim(SeuratObject_Wuetal) # 29733g 33790c
-
-## Quality control test. 
-SeuratObject_Wuetal[["percent.mt"]] <- PercentageFeatureSet(SeuratObject_Wuetal, pattern="^MT-")
-SeuratObject_Wuetal <- subset(SeuratObject_Wuetal, subset=nFeature_RNA > 200 & nFeature_RNA < 6000 &
-                                nCount_RNA > 400 & percent.mt < 15)
-length(SeuratObject_Wuetal$orig.ident); dim(SeuratObject_Wuetal)     # 29733g 30959c
-
-## SCTransform # It requires a lot of memory. 
-SeuratObject_Wuetal <- SCTransform(SeuratObject_Wuetal,method="glmGamPoi",
-                                   vars.to.regress="percent.mt",verbose=FALSE); 
-dim(SeuratObject_Wuetal)
-
-# saveRDS(SeuratObject_Wuetal, "SeuratObject_Wuetal_QCSCT.rds")
-```
-
-##   Section 2. Read Bassez et al. scRNAseq data files and make Seurat object. 
-
-```{Bassezetal}
-################################################################################
-## Step2a. Read count matrix .rds file and setup Seurat object - Bassez et al. data.  Then, QC => SCTransform
-################################################################################
-CountMatrix_Bassezetal <- readRDS("1863-counts_cells_cohort1.rds"); dim(CountMatrix_Bassezetal) #25288g175942c
-SeuratObject_Bassezetal<- CreateSeuratObject(counts = CountMatrix_Bassezetal)   
-
-################################################################################
-## Step2b. Read metadata  - Bassez et al. data.  => add it to Seurat object
-################################################################################
-MetaData_Bassezetal <- fread("1872-BIOKEY_metaData_cohort1_web.csv", header=TRUE, stringsAsFactors=FALSE)  
-MetaData_Bassezetal_Proc <- MetaData_Bassezetal %>% dplyr::select(c(Cell,patient_id,BC_type,cellType)) %>%
-                  dplyr::mutate(BC_type=gsub("\\+","p",MetaData_Bassezetal$BC_type)); 
-colnames(MetaData_Bassezetal_Proc)[2]<-"CaseID";dim(MetaData_Bassezetal_Proc) # 175942  4
-
-## Check the @active.ident and MetaData_Proc$Cell are the same or not
-identical(names(SeuratObject_Bassezetal@active.ident) , MetaData_Bassezetal_Proc$Cell)  # TRUE
-SeuratObject_Bassezetal$orig.ident <- MetaData_Bassezetal_Proc$CaseID; 
-length(SeuratObject_Bassezetal$orig.ident)  # 175942
-
-## Add metadata
-SeuratObject_Bassezetal <- AddMetaData(object=SeuratObject_Bassezetal, 
-                              metadata=c(MetaData_Bassezetal_Proc$Cell), col.name=c("Cell_ID"))
-SeuratObject_Bassezetal <- AddMetaData(object=SeuratObject_Bassezetal, 
-                              metadata=c(MetaData_Bassezetal_Proc$BC_type), col.name=c("BC_type"))
-SeuratObject_Bassezetal <- AddMetaData(object=SeuratObject_Bassezetal, 
-                              metadata=c(MetaData_Bassezetal_Proc$cellType), col.name=c("cellType"))
-# saveRDS(SeuratObject_Bassezetal, file="SeuratObject_Bassezetal_MetaData.rds")
-
-################################################################################
-## Step2c. Subset only ER+ and pre-treatment samples. i.e. Remove HER2+/ER+ and treated ER+ patients.
-## Then QC and SCTransform
-################################################################################
-Idents(SeuratObject_Bassezetal) = 'BC_type'; table(SeuratObject_Bassezetal@active.ident)  
-# HER2p  TNBC   ERp 
-# 13414 82120 80408
-
-## Subset only ER+ cells
-SeuratObject_Bassezetal<- subset(x = SeuratObject_Bassezetal, idents ="ERp")     
-# Only T cell CD3D>3.  For other cell types, Marker > 2. 
-table(SeuratObject_Bassezetal@active.ident); dim(SeuratObject_Bassezetal@meta.data) # 80408     6
-
-### Subset only Pre-treatment cells
-table(grepl("Pre_", rownames(SeuratObject_Bassezetal@meta.data)))   # FALSE 39288 "On", TRUE 41120  PRE
-SeuratObject_Bassezetal$PreOnTreat <- ifelse(grepl("Pre", SeuratObject_Bassezetal$Cell_ID), "Pre", "On")
-SeuratObject_Bassezetal <- subset(x=SeuratObject_Bassezetal, subset=PreOnTreat == "Pre")
-table(SeuratObject_Bassezetal$PreOnTreat) ## Onlu Pre: 41120
-
-## Quality control test. 
-SeuratObject_Bassezetal[["percent.mt"]] <- PercentageFeatureSet(SeuratObject_Bassezetal, pattern = "^MT-")   
-SeuratObject_Bassezetal_Filtered <- subset(SeuratObject_Bassezetal, subset=nFeature_RNA > 200 & 
-                                             nFeature_RNA < 6000 & nCount_RNA > 400 & percent.mt < 15)
-length(SeuratObject_Bassezetal_Filtered@active.ident); 
-dim(SeuratObject_Bassezetal_Filtered@assays$RNA)  # 25288g 41120c
-
-SeuratObject_Bassezetal <- SCTransform(SeuratObject_Bassezetal_Filtered, method="glmGamPoi",
-                                       vars.to.regress="percent.mt", verbose=FALSE) 
-# saveRDS(SeuratObject_Bassezetal, file="SeuratObject_Bassezetal_QCSCT.rds")    
-
-```
-
-# D. Merge, SCTransform and Harmony integration, and clustering cells
-
-##   Section 3. Merge, SCTransform and Harmony integration of Wu et al. and Bassez et al. Seurat object. 
-```{Merge_SCTransform}
-################################################################################
-## Step3a.  Merge Seurat objects.   # https://satijalab.org/seurat/articles/merge_vignette.html
-################################################################################
-SeuratObject_WuetalBassezetal <- merge(unlist(SeuratObject_Wuetal) , unlist(SeuratObject_Bassezetal),
-                                       add.cell.ids=c("GSE176078", "EGA6608"))  
-### Merge takes about 10 minutes
-# saveRDS(SeuratObject_WuetalBassezetal, file="SeuratObject_Merge_WuetalBassezetal.rds")
-
-
-## Step3b	SCTransform to regress out mitochondrial read percentage per cell  - 
-## This requires a lot of memory and takes. You may need to use supercomputer
-
-SeuratObject_WuetalBassezetal <- SCTransform(SeuratObject_WuetalBassezetal, method="glmGamPoi", 
-                                             vars.to.regress="percent.mt", verbose=FALSE)   
-# This takes about 10 min. # This step requires a lot of memory. It may not run in your 
-# local computer. You will need a supercomputer.
-# saveRDS(SeuratObject_WuetalBassezetal, "SeuratObject_MergeSCTransform_WuetalBassezetal.rds")
-
-### If SCTransform fails in you computer, run this line to load Seurat Object.  
-# SeuratObject_WuetalBassezetal <- readRDS("SeuratObject_WuetalBassezetalransform_Wuetal_Bassezetal.rds")
-################################################################################
-## Step3c	Normalization and Scaling, and make DimPlot
-################################################################################
-SeuratObject_WuetalBassezetal <- RunPCA(SeuratObject_WuetalBassezetal, npcs = 30, verbose = F)
-
-SeuratObject_WuetalBassezetal$DatasetID <- ifelse( grepl("CID",SeuratObject_WuetalBassezetal$orig.ident),
-                        "GSE176078",   ifelse( grepl("BIOKEY",SeuratObject_WuetalBassezetal$orig.ident),
-                        "EGA6608", "NotAvail") )  
-table(SeuratObject_WuetalBassezetal$DatasetID) # GSE176078: 30959 cells    EGA6608: 41120
-
-################################################################################
-## Step3d.	Integrate using R package Harmony   Don't forget assay.use="SCT"   - Takes 10 minutes
-################################################################################
-SeuratObject_WuetalBassezetal <- SeuratObject_WuetalBassezetal %>% harmony::RunHarmony("orig.ident",
-                                    plot_convergence=T, assay.use="SCT")  
-# saveRDS(SeuratObject_WuetalBassezetal, file="SeuratObject_WuetalBassezetalIntegration.rds")   
-
-### If Harmony integration fails in you computer, run this line to load Seurat Object.  
-# SeuratObject_WuetalBassezetal <- readRDS("SeuratObject_WuetalBassezetalIntegration.rds")
-
-##################### Harmony plot After Harmony Integration  #############################
-p1 <- DimPlot(object=SeuratObject_WuetalBassezetal, reduction="harmony", pt.size=.1, group.by="DatasetID") +
-              NoLegend()
-p2 <- VlnPlot(object=SeuratObject_WuetalBassezetal, features="harmony_1", group.by ="DatasetID", pt.size = .1) + 
-              NoLegend()
-plot_grid(p1,p2)
-# ggsave(p1, height=8,width=8, dpi=300, 
-#        filename=paste0("Fig1_OutHarmonyplot_MergeSCTHarmony.pdf"), useDingbats=FALSE)
-
-```
-
-##   Section 4. UMAP reduction, clustering cells, and define cell types. 
 ```{UMAP_Reduction}
+
+SeuratObject_WuetalBassezetal <- readRDS("SeuratObject_WuetalBassezetalIntegration.rds")
+
 ################################################################################
-## Step4a.	UMAP Reduction and clustering
+## Step1a.	UMAP Reduction and clustering
 ################################################################################
 SeuratObject_WuetalBassezetal <- SeuratObject_WuetalBassezetal %>% RunUMAP(reduction="harmony", dims=1:30, 
                         verbose=F) %>% FindNeighbors(reduction="harmony", k.param=15, dim=1:30)  
@@ -328,7 +113,7 @@ ggsave(MyDimplot_ByStudyID, height=8,width=9, dpi=300,
 ##### ----------- ============== $$$$$$$$$$$$$  ##### ----------- ============== $$$$$$$$$$$$$  #####
 
 ################################################################################
-## Step4b. Define cell types by marker gene expression   ####
+## Step1b. Define cell types by marker gene expression   ####
 ################################################################################
 MyMainMarker <- c("PECAM1","RAMP2","FLT1","CLDN5",   "EPCAM","KRT19","KRT18","CD24",  
                   "PDGFRB","C1R","DCN","COL1A1",   "ACTA2",  "TPSB2","TPSAB1","CPA3",   
@@ -411,11 +196,11 @@ ggsave(MyViolinplot_Main, height=6,width=9, dpi=300,
 
 ```
 
-##  Section 5. Subset Myeloid cells and find macrophage cells by marker genes expression
+##  Section 2. Subset Myeloid cells and find macrophage cells by marker genes expression
 
 ```{MyeloidSubsuet}
 ################################################################################
-## Step5a. Subset Myeloid and define cell subtypes
+## Step2a. Subset Myeloid and define cell subtypes
 ################################################################################
 # Subset by active.ident
 SeuratObject_WuetalBassezetal_Myeloid <- subset(x=SeuratObject_WuetalBassezetal, idents =c("Myeloid")) 
@@ -441,7 +226,7 @@ ggsave(MyDimplot_ERpos_Myeloid_TSNE, height=8,width=9, dpi=300,
       useDingbats=FALSE)
 
 ################################################################################
-## Step5b. Dotplot by Myeloid markers
+## Step2b. Dotplot by Myeloid markers
 ################################################################################
 MyFeature_Myeloid <- c( "IL1B","CSF1R","S100A9","FCGR3A",   "CD14","SIGLEC1","CXCL10","EGR1","CD68","FCGR1A",
                         "FABP5","APOE",  "CD80","CD86","CD163","MRC1","MSR1",    "CLEC10A","THBD","CD1C",
@@ -527,7 +312,7 @@ ggsave(MyViolinplot, height=5,width=5, dpi=300, filename=paste0("FigS1B_OutVioli
 #####  ============== $$$$$$$$$  ##### ----------- ============== $$$$$$$$$$$$$  #####  ============== $$$$$$$$$$  
 
 ################################################################################
-## Step5c. Store the cell type identity as a data.frame
+## Step2c. Store the cell type identity as a data.frame
 ################################################################################
 ### Store the cell type identity as a data.frame
 CellTypeMyeloidDataFrame <- data.frame((SeuratObject_WuetalBassezetal_Myeloid@active.ident)); 
@@ -541,11 +326,10 @@ head(CellTypeMyeloidDataFrame_Proc); table(CellTypeMyeloidDataFrame_Proc$Myeloid
 
 ```
 
-
-##   Section 6. Subset NKT cells and find cell sub types by marker genes expression 
+##   Section 3. Subset NKT cells and find cell sub types by marker genes expression 
 ```{NKT}
 ################################################################################
-## Step6a. Subset NKT cells 
+## Step3a. Subset NKT cells 
 ################################################################################
 SeuratObject_WuetalBassezetal_NKT <- subset(x=SeuratObject_WuetalBassezetal, idents =c("TNKcell")) 
 length(SeuratObject_WuetalBassezetal_NKT@active.ident)  # 16956
@@ -572,7 +356,7 @@ MyDimplot_ERpos_Tcell_TSNE <- DimPlot(SeuratObject_WuetalBassezetal_NKT, pt.size
 #         useDingbats=FALSE)
 
 ################################################################################
-## Step6b. Dotplot by NK, CD4+T, CD8+T cell markers
+## Step3b. Dotplot by NK, CD4+T, CD8+T cell markers
 ################################################################################
 Marker_Tcell <- c("FCGR3A","IL2RB","KLRB1","KLRC1","KLRD1","KLRF1","KLRK1","NCR3",
                   "NCR1","FGFBP2","AREG","XCL1","KIR2DL4","NCAM1",
@@ -635,7 +419,7 @@ ggsave(MyViolinplot_NKTcell, height=4.5,width=5, dpi=300,
 #####  ============== $$$$$$$$$$$$$  ##### ============== $$$$$$$$$$$$$  ##### $$$$$$$$$$$$$  
 
 #################################################################################
-## Step6c. Store the cell type identity as a data.frame
+## Step3c. Store the cell type identity as a data.frame
 #################################################################################
 CellTypeTcellDataFrame <- data.frame((SeuratObject_WuetalBassezetal_NKT@active.ident)); 
 dim(CellTypeTcellDataFrame) # 17103   1
@@ -648,10 +432,11 @@ table(CellTypeTcellDataFrame_Proc$TcellType); dim(CellTypeTcellDataFrame_Proc)  
 ```
 
 
-##Section 7.  Annotate Myeloid cell subtypes and NKT cell subtypes, and calculate Macrophage fraction per samples. 
+##Section 4.  Annotate Myeloid cell subtypes and NKT cell subtypes, and calculate Macrophage fraction per samples. 
+
 ```{CellTypeAnnotation}
 #################################################################################
-## Step7a. Annotate Myeloid cell subtypes and NKT cell subtypes  
+## Step4a. Annotate Myeloid cell subtypes and NKT cell subtypes  
 #################################################################################
 CellTypeClusterDataFrame_Proc <- MyMainMetadata[, c("CellID_GSE176EGA6608","CellTypeByMarker_GSE176EGA6608")]
 CellTypeClusterMyeloidTcell <- dplyr::left_join(CellTypeClusterDataFrame_Proc, CellTypeMyeloidDataFrame_Proc) %>% 
@@ -675,7 +460,7 @@ sum(table(CellTypeClusterMyeloidTcell$ByMainMarker_MyeloidTcell))
 
 
 ################################################################################
-## Step7b. Add new metadata of new cell subtypes to Seurat object
+## Step4b. Add new metadata of new cell subtypes to Seurat object
 ################################################################################
 SeuratObject_WuetalBassezetal <- AddMetaData(object=SeuratObject_WuetalBassezetal, 
                                             metadata=c(CellTypeClusterMyeloidTcell$ByMainMarker_MyeloidTcell), 
@@ -689,7 +474,7 @@ SeuratObject_WuetalBassezetal <- SetIdent(SeuratObject_WuetalBassezetal,
 table(SeuratObject_WuetalBassezetal@active.ident)
 
 ################################################################################
-## Step7c. Make violin plots by main marker gene expression 
+## Step4c. Make violin plots by main marker gene expression 
 ################################################################################
 SeuratObject_WuetalBassezetal <- subset(x=SeuratObject_WuetalBassezetal, idents = c("NotAvail"), invert=TRUE) 
 # invert=TRUE willl exclude the ident cells.  #  I alrady removed "NotAvail" cells  
@@ -747,12 +532,13 @@ MyDotPlot_MainType <- DotPlot(SeuratObject_WuetalBassezetal,
 
 # E. Calculate cell tpy fraction and make necessary figures
 
-##   Section 8.  Calculate cell type fraction per samples. 
+##   Section 5.  Calculate cell type fraction per samples. 
+
 Make dotplot of Macrophage fraction per sample. Make fraction barplot for all samples 
 
 ```{CellTypeFraction}
 ################################################################################
-## Step8a. Cell type fraction per samples. Make dotplot for macrophage fraction. 
+## Step5a. Cell type fraction per samples. Make dotplot for macrophage fraction. 
 ## number of cells per cluster: https://github.com/satijalab/seurat/issues/2825
 ################################################################################
 CellTypeFraction<- with(SeuratObject_WuetalBassezetal@meta.data, 
@@ -786,7 +572,7 @@ dev.off()
 ##### ----------- ============== $$$$$$$$$$$$$  ##### ----------- ============== $$$$$$$$$$$$$  
 
 #################################################################################################
-### Step8b. Make fraction barplot that represent each cell type fraction in different samples
+### Step5b. Make fraction barplot that represent each cell type fraction in different samples
 #################################################################################################
 NewIndex<-c()
 #for (EachCase in names(sort(ProportionCalculation[,cell_type]))) { 
@@ -810,7 +596,7 @@ ggsave(FractionBarplot, height=5,width=8, dpi=300,
 ##### ----------- ============== $$$$$$$$$$$$$  ##### -----------  ----------- ============== $$$$$$$$$$$$$  
 
 #################################################################################################
-### Step8c. Make a table to record cell type fraction in different samples. 
+### Step5c. Make a table to record cell type fraction in different samples. 
 #################################################################################################
 ProportionCalculationProcess <- ProportionCalculation*100
 ProportionCalculationProcess$MacroPoorMidRich <- ifelse(ProportionCalculationProcess[, "Macrophage"] >= 4, 
@@ -825,14 +611,14 @@ fwrite(ProportionCalculationMacroRatio, file="MacrophageInfiltrarion_IndividualS
           ## Use this for celltype fraction correlation heatmap.
 
 #################################################################################################
-### Step8d. Cell type correlation pyramid plot.
+### Step5d. Cell type correlation pyramid plot.
 #################################################################################################
 library(ComplexHeatmap)   #BiocManager::install("ComplexHeatmap")
 library(circlize)  # cran  for colorRamp2 function
 library(corrplot)
 options(rgl.useNULL = TRUE)  # https://stackoverflow.com/a/66127391/2554330
 
-Correlation.corplot_SH <- function(corMatrix,fontsize=0.8){
+Correlation.corplot_SH<-function(corMatrix,fontsize=0.8){
         rownames(corMatrix)=gsub("_"," ",rownames(corMatrix))
         colnames(corMatrix)=gsub("_"," ",colnames(corMatrix))
         mycolor=colorRampPalette(c("darkblue","blue", "white","orange", "red","red"))(n=100)
@@ -850,17 +636,17 @@ CellTypeProportionData_Cor <- cor(CellTypeProportionData_Correlation, method="sp
 dim(CellTypeProportionData_Cor); CellTypeProportionData_Cor[1:2,] 
 
 pdf(file="Fig2E_PyramidCorrelation_ByCellTypeFraction.pdf",width=6, height=6)
-          Correlation.plot=Correlation.corplot_SH(corMatrix=CellTypeProportionData_Cor)
+         Correlation.plot=Correlation.corplot_SH(corMatrix=CellTypeProportionData_Cor)
 graphics.off()
 ```
 
 
-## Section 9. Scaled by DefaultAssay RNA - this is used to calculate 
+## Section 6. Scaled by DefaultAssay RNA - this is used to calculate 
 ##            correlation between gene expression and Macrophage fraction. 
 
 ```{Scaling}
 #################################################################################################
-## Step 9a. Scaled by DefaultAssay RNA 
+## Step6a. Scaled by DefaultAssay RNA 
 #################################################################################################
 library(patchwork) # plot_annotation function
 library(gridExtra)  # for 'grid.arrange' function
@@ -880,7 +666,7 @@ SeuratObject_WuetalBassezetal_Scaled <- ScaleData(SeuratObject_WuetalBassezetal_
 ## SeuratObject_WuetalBassezetal_Scaled <- readRDS("SeuratObject_WuetalBassezetal_RNAScaled.rds")
 
 #################################################################################################
-## Step 9b. calculate correlation between gene expression and cell type fraction in cancer epithelial cells
+## Step6b. calculate correlation between gene expression and cell type fraction in cancer epithelial cells
 #################################################################################################
 
 MetaData_WuetalBassezetal <- SeuratObject_WuetalBassezetal_Scaled@meta.data; dim(MetaData_WuetalBassezetal) 
@@ -956,9 +742,9 @@ ScaledExp_RmvLowExpGene <- readRDS(file="ScaledExp_RmvLowExpGene.rds")
  
 Calculate mean of gene expression per caseID and calculate correlation 
  
-```{Step9c}
+```{Step6c}
 #################################################################################################
-## Step 9c. Calculate mean of gene expression per caseID and calculate correlation 
+## Step6c. Calculate mean of gene expression per caseID and calculate correlation 
 ## between gene expression and Macrophage fraction in different cell types. 
 #################################################################################################
 MyCellTypeSubset <- unique(ScaledExp_RmvLowExpGene$CellTypeMacroTcell_GSE176EGA6608); print(MyCellTypeSubset)
@@ -1041,10 +827,9 @@ fwrite(CorrTestSummary_AllCellType, file="SpearCorrel_MacrophageFraction_AllGene
 
 Linedotplot of correlation - Figure 3A
 
-```{Stpe9d}
-
+```{Step6d}
 #################################################################################################
-## Step 9d. Linedotplot of correlation - Figure 3A
+## Step6d. Linedotplot of correlation - Figure 3A
 #################################################################################################
 colnames(CorrTestSummary_AllCellType)[1] <- "GeneSymb"; dim(CorrTestSummary_AllCellType); 
 CorrTestSummary_AllCellType[1:2,]
@@ -1104,10 +889,10 @@ RhoThres=0.5; pvalThres=0.05
 
 Outgrid correlation dotplot - Figure 3E  
 
-```{Step9e}
+```{Step6e}
     
 #################################################################################################
-## Step 9e. Outgrid correlation dotplot - Figure 3E  
+## Step6e. Outgrid correlation dotplot - Figure 3E  
 ##          Correlation between Macrophage infiltration and S100A11 gene expression in different cell types.  
 #################################################################################################
 library(gridExtra)  # for 'grid.arrange' function      
@@ -1220,13 +1005,12 @@ dev.off()
 
 
 ```
-      
     
-## Section 10.  S100A11 expression in different samples or in different cell types. 
+## Section 7.  S100A11 expression in different samples or in different cell types. 
 
 ```{S100A11}
 #################################################################################################
-## Step 10a. Violin plot of S100A11 gene expression in different CaseID, when the samples
+## Step7a. Violin plot of S100A11 gene expression in different CaseID, when the samples
 ## are sorted by macrophage infiltration ascending order. 
 #################################################################################################
 ProfortionCal_SortByMacrophage <- ProportionCalculationMacroRatio[with(ProportionCalculationMacroRatio, 
@@ -1239,7 +1023,7 @@ ggsave(MyViolinplot_ByCaseID, height=8,width=12, dpi=300,
        filename="Fig3C_OutVlnPlot_S100A11Exp_InDifferentCaseID.pdf", useDingbats=FALSE)
 
 #################################################################################################
-## Step 10b. Violin plot of S100A11 gene expression in different cell types. 
+## Step7b. Violin plot of S100A11 gene expression in different cell types. 
 #################################################################################################
 SeuratObject_WuetalBassezetal_Scaled$CellTypeMacroTcell_GSE176EGA6608 <- 
                             factor(SeuratObject_WuetalBassezetal_Scaled$CellTypeMacroTcell_GSE176EGA6608, 
@@ -1251,4 +1035,5 @@ ggsave(MyViolinplot_ByCellType, height=8,width=12, dpi=300,
        filename="Fig3D_OutVlnPlot_S100A11Exp_InDifferentCellType.pdf", useDingbats=FALSE)
 ```
 
-## The end
+
+**The End**
