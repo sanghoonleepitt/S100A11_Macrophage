@@ -40,7 +40,6 @@ library(cowplot) # CRAN, for plot_grid()
 
 library(patchwork)# CRAN. to use plot_annotation()
 library(harmony) # CRAN, to use RunHarmony() function, https://github.com/immunogenomics/harmony
-
 ```
 
 **Setup working directory.**
