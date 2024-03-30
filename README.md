@@ -11,8 +11,8 @@ output: html_document
 
 ___If your computer spec is not good, your computer may shut down while learning codes.___
 
-To reproduce the figures published in the paper, as we explained in Section 1, you should contact us and obtain Seurat object file,
-"SeuratObject_WuetalBassezetalIntegration.rds" and run the rest of the code. 
+To run the codes below and reproduce the figures published in the paper, as we explained in Section 1 below, you should contact us to obtain Seurat object file,
+"SeuratObject_WuetalBassezetalIntegration.rds."
 
 ## Cancer-cell derived S100A11 promotes macrophage recruitment in ER+ breast cancer
 
@@ -22,6 +22,7 @@ In this study, we integrated two publicly available single-cell RNA-sequencing d
 
 This study provides new insights into the relationship between macrophages and cancer cell-derived factors in human ER+ breast tumors. Additionally, it uncovers S100A11 as a targetable paracrine regulator of cancer-macrophage interactions in the pro-tumorigenic macrophage-rich breast tumor microenvironment. 
 
+![Figure1_BRCAERpS100A11_v2 7_20240329_Github](https://github.com/sanghoonleepitt/S100A11_Macrophage/assets/106251438/b2f26aa7-d4e4-410c-a7d9-3a0e512f23cd)
 
 **Installing necessary libraries**
 
